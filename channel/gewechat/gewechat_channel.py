@@ -70,7 +70,7 @@ class GeWeChatChannel(ChatChannel):
             logger.info(f"[gewechat] new app_id saved: {app_id}")
             self.app_id = app_id
 
-        # 获取回调地址，示例地址：http://172.17.0.1:9919/v2/api/callback/collect  
+        # 获取回调地址，示例地址：http://172.17.0.1:9919/v2/api/callback/collect
         callback_url = conf().get("gewechat_callback_url")
         if not callback_url:
             logger.error("[gewechat] callback_url is not set, unable to start callback server")
@@ -94,7 +94,7 @@ class GeWeChatChannel(ChatChannel):
         callback_thread = threading.Thread(target=set_callback, daemon=True)
         callback_thread.start()
 
-        # 从回调地址中解析出端口与url path，启动回调服务器  
+        # 从回调地址中解析出端口与url path，启动回调服务器
         parsed_url = urlparse(callback_url)
         path = parsed_url.path
         # 如果没有指定端口，使用默认端口80
@@ -108,13 +108,19 @@ class GeWeChatChannel(ChatChannel):
         receiver = context["receiver"]
         gewechat_message = context.get("msg")
         if reply.type in [ReplyType.TEXT, ReplyType.ERROR, ReplyType.INFO]:
+            reasoning_text = reply.reasoning_content
             reply_text = reply.content
             ats = ""
             if gewechat_message and gewechat_message.is_group:
                 ats = gewechat_message.actual_user_id
+            if reasoning_text:
+                self.client.post_text(self.app_id, receiver, reasoning_text)
+                logger.info("[gewechat] Do send reasoning_text to {}: {}".format(receiver, reasoning_text))
             self.client.post_text(self.app_id, receiver, reply_text, ats)
             logger.info("[gewechat] Do send text to {}: {}".format(receiver, reply_text))
         elif reply.type == ReplyType.VOICE:
+            if not conf().get("speech_recognition"):
+                return
             try:
                 content = reply.content
                 if content.endswith('.mp3'):
@@ -124,7 +130,7 @@ class GeWeChatChannel(ChatChannel):
                     callback_url = conf().get("gewechat_callback_url")
                     silk_url = callback_url + "?file=" + silk_path
                     self.client.post_voice(self.app_id, receiver, silk_url, duration)
-                    logger.info(f"[gewechat] Do send voice to {receiver}: {silk_url}, duration: {duration/1000.0} seconds")
+                    logger.info(f"[gewechat] Do send voice to {receiver}: {silk_url}, duration: {duration / 1000.0} seconds")
                     return
                 else:
                     logger.error(f"[gewechat] voice file is not mp3, path: {content}, only support mp3")

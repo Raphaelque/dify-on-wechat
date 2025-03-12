@@ -54,14 +54,14 @@ class DeepseekBot(Bot):
                     
                 session = self.sessions.session_query(query, session_id)
                 
-                reply_content = self.reply_text(session)
+                reply_content, reasoning_content = self.reply_text(session)
                 
                 if reply_content:
                     # 将回复添加到会话中
                     session.add_reply(reply_content)
                     
                     logger.info("[DEEPSEEK] new reply={}".format(reply_content))
-                    reply = Reply(ReplyType.TEXT, reply_content)
+                    reply = Reply(ReplyType.TEXT, reply_content, reasoning_content)
                 else:
                     logger.error("[DEEPSEEK] reply content is empty")
                     reply = Reply(ReplyType.ERROR, "对不起，我没有得到有效的回复。")
@@ -90,10 +90,11 @@ class DeepseekBot(Bot):
                 presence_penalty=self.args["presence_penalty"],
                 request_timeout=self.args["request_timeout"]
             )
-            
+
             # 提取回复内容
+            reasoning_content = response.choices[0].message.reasoning_content
             reply_content = response.choices[0].message.content
-            return reply_content
+            return reply_content, reasoning_content
             
         except Exception as e:
             # 处理异常情况

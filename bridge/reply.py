@@ -24,9 +24,10 @@ class ReplyType(Enum):
 
 
 class Reply:
-    def __init__(self, type: ReplyType = None, content=None):
+    def __init__(self, type: ReplyType = None, content=None, reasoning_content=None):
         self.type = type
         self.content = content
+        self.reasoning_content = reasoning_content
 
     def __str__(self):
-        return "Reply(type={}, content={})".format(self.type, self.content)
+        return "Reply(type={}, content={}, reasoning_content={})".format(self.type, self.content, self.reasoning_content)
